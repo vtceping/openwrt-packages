@@ -124,12 +124,6 @@ local flows = {
 	"xtls-rprx-splice-udp443"
 }
 
-local tls_flows = {
-	-- tls
-	"xtls-rprx-vision",
-	"xtls-rprx-vision-udp443"
-}
-
 m = Map("bypass", translate("Edit Bypass Server"))
 m.redirect = luci.dispatcher.build_url("admin/services/bypass/servers")
 if m.uci:get("bypass", sid) ~= "servers" then
@@ -437,20 +431,16 @@ o:depends("transport", "ws")
 o.rmempty = true
 
 if is_finded("v2ray") then
-	-- 启用WS前置数据
-	o = s:option(Flag, "ws_ed_enable", translate("Enable early data"))
-	o:depends("transport", "ws")
-
 	-- WS前置数据
 	o = s:option(Value, "ws_ed", translate("Max Early Data"))
-	o:depends("ws_ed_enable", true)
+	o:depends("transport", "ws")
 	o.datatype = "uinteger"
 	o.default = 2048
 	o.rmempty = true
 
 	-- WS前置数据标头
 	o = s:option(Value, "ws_ed_header", translate("Early Data Header Name"))
-	o:depends("ws_ed_enable", true)
+	o:depends("transport", "ws")
 	o.default = "Sec-WebSocket-Protocol"
 	o.rmempty = true
 end
@@ -642,23 +632,16 @@ if is_finded("xray") then
 	o:depends({type = "v2ray", v2ray_protocol = "vless", transport = "kcp", tls = false})
 	o:depends({type = "v2ray", v2ray_protocol = "trojan", transport = "tcp", tls = false})
 	o:depends({type = "v2ray", v2ray_protocol = "trojan", transport = "kcp", tls = false})
-
-	-- Flow
-	o = s:option(Value, "vless_flow", translate("Flow"))
-	for _, v in ipairs(flows) do
-		o:value(v, translate(v))
-	end
-	o.rmempty = true
-	o.default = "xtls-rprx-splice"
-	o:depends("xtls", true)
-
-	o = s:option(Value, "tls_flow", translate("Flow"))
-	for _, v in ipairs(tls_flows) do
-		o:value(v, translate(v))
-	end
-	o.rmempty = true
-	o:depends({type = "v2ray", v2ray_protocol = "vless", tls = true})
 end
+
+-- Flow
+o = s:option(Value, "vless_flow", translate("Flow"))
+for _, v in ipairs(flows) do
+	o:value(v, translate(v))
+end
+o.rmempty = true
+o.default = "xtls-rprx-splice"
+o:depends("xtls", true)
 
 -- [[ TLS部分 ]] --
 o = s:option(Flag, "tls_sessionTicket", translate("Session Ticket"))
@@ -674,7 +657,6 @@ if is_finded("xray") then
 	o:value("safari", translate("safari"))
 	o:value("randomized", translate("randomized"))
 	o:depends({type = "v2ray", tls = true})
-	o:depends({type = "v2ray", xtls = true})
 	o.default = "disable"
 end
 
